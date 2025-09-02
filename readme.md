@@ -8,5 +8,5 @@
 
 ## Reinforcement Learning (Bag 4)
 
-- ✔️ **Q-LEARNING**
+- ✔️ **Q-Learning**
 - ✔️ **SARSA**

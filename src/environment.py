@@ -57,7 +57,7 @@ class Environment:
             return -1
 
     def check_climb(self, agent: Agent):
-        if [agent.row, agent.col] in self.start_point.tolist():
+        if [agent.row, agent.col] in self.start_point.tolist() and agent.has_reward:
             agent.is_terminated = True
             return 0
         else:
