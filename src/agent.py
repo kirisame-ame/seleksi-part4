@@ -65,6 +65,21 @@ class Agent:
             state = next_state
         return self.path, total_rewards
 
+    def choose_action(self):
+        if random.uniform(0, 1) < self.epsilon:
+            return random.choice(ACTIONS)
+        else:
+            state = (
+                self.row,
+                self.col,
+                self.is_breeze,
+                self.is_stench,
+                self.is_glitter,
+                self.has_reward,
+            )
+
+            return self.q_table.get_best_action(state)
+
     def take_action(self, env, action):
 
         if action == "up":
@@ -98,21 +113,6 @@ class QLearning(Agent):
     def __init__(self):
         super().__init__()
 
-    def choose_action(self):
-        if random.uniform(0, 1) < self.epsilon:
-            return random.choice(ACTIONS)
-        else:
-            state = (
-                self.row,
-                self.col,
-                self.is_breeze,
-                self.is_stench,
-                self.is_glitter,
-                self.has_reward,
-            )
-
-            return self.q_table.get_best_action(state)
-
     def train(self, env, episodes=1000, alpha=0.3, gamma=0.95, epsilon=0.3):
         self.reset()
         self.q_table = QTable()
@@ -121,7 +121,7 @@ class QLearning(Agent):
 
         for episode in range(episodes):
             # Q-learning steps
-            # Q(S,A) <- Q(S,A) + alpha(R + gamma * Q(S',A') - Q(S,A))
+            # Q(S,A) <- Q(S,A) + alpha(R + gamma * maxQ(S',A') - Q(S,A))
             self.reset()
             # 1. Start a state S
             state = (
@@ -140,7 +140,7 @@ class QLearning(Agent):
                 next_state, reward = self.take_action(env, action)
                 total_rewards += reward
                 best_next_action = self.q_table.get_best_action(next_state)
-                # 4. R + gamma * Q(S',A')
+                # 4. R + gamma * maxQ(S',A')
                 td_target = reward + gamma * self.q_table.get_Q(
                     next_state, best_next_action
                 )
@@ -154,3 +154,39 @@ class QLearning(Agent):
 class SARSA(Agent):
     def __init__(self):
         super().__init__()
+
+    def train(self, env, episodes=1000, alpha=0.3, gamma=0.95, epsilon=0.3):
+        self.reset()
+        self.q_table = QTable()
+        self.epsilon = epsilon
+        total_rewards = 0
+
+        for episode in range(episodes):
+            # SARSA steps
+            # Q(S,A) <- Q(S,A) + alpha(R + gamma * Q(S',A') - Q(S,A))
+            self.reset()
+            # 1. Start a state S
+            state = (
+                self.row,
+                self.col,
+                self.is_breeze,
+                self.is_stench,
+                self.is_glitter,
+                self.has_reward,
+            )
+            action = self.choose_action()
+            while not self.is_terminated:
+                # 2. Select an action A
+                self.path.append(action)
+                # 3. Take the action Q(S,A)
+                next_state, reward = self.take_action(env, action)
+                total_rewards += reward
+                next_action = self.choose_action()
+                # 4. R + gamma * Q(S',A')
+                td_target = reward + gamma * self.q_table.get_Q(next_state, next_action)
+                td_error = td_target - self.q_table.get_Q(state, action)
+                new_q = self.q_table.get_Q(state, action) + alpha * td_error
+                self.q_table.set_Q(state, action, new_q)
+                state = next_state
+                action = next_action
+        return total_rewards

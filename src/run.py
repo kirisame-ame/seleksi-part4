@@ -1,12 +1,18 @@
-from agent import QLearning, ACTIONS
+from agent import QLearning, SARSA, ACTIONS
 from environment import Environment
 
 qlearning = QLearning()
+sarsa = SARSA()
 env = Environment()
 
 print(qlearning.train(env=env, episodes=1000))
+print(sarsa.train(env=env, episodes=1000))
+
 print("QLearning QTable:")
 print(qlearning.q_table.table)
+print("Sarsa QTable:")
+print(sarsa.q_table.table)
 print("\nQLearning Best Path:")
 print(qlearning.best_path(env=env))
-print(qlearning.q_table.table.get((0, 0, False, False, False, False)), 404)
+print("\nSarsa Best Path:")
+print(sarsa.best_path(env=env))
