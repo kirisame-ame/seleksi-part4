@@ -11,6 +11,11 @@ class QTable:
     def get_Q(self, state, action):
         return self.table.get((state, action), 0)
 
+    def get_location_Q(self, row, col):
+        return {
+            k: v for k, v in self.table.items() if k[0][0] == row and k[0][1] == col
+        }
+
     def set_Q(self, state, action, value):
         self.table[(state, action)] = value
 
@@ -57,7 +62,11 @@ class Agent:
             self.is_glitter,
             self.has_reward,
         )
+        iter = 0
         while not self.is_terminated:
+            iter += 1
+            if iter > 100:
+                return [], "Error:Infinite Loop"
             action = self.q_table.get_best_action(state)
             next_state, reward = self.take_action(env, action)
             self.path.append(action)
@@ -113,7 +122,7 @@ class QLearning(Agent):
     def __init__(self):
         super().__init__()
 
-    def train(self, env, episodes=1000, alpha=0.3, gamma=0.95, epsilon=0.3):
+    def train(self, env, episodes=1000, alpha=0.2, gamma=0.90, epsilon=0.3):
         self.reset()
         self.q_table = QTable()
         self.epsilon = epsilon
@@ -155,7 +164,7 @@ class SARSA(Agent):
     def __init__(self):
         super().__init__()
 
-    def train(self, env, episodes=1000, alpha=0.3, gamma=0.95, epsilon=0.3):
+    def train(self, env, episodes=1000, alpha=0.2, gamma=0.90, epsilon=0.3):
         self.reset()
         self.q_table = QTable()
         self.epsilon = epsilon
