@@ -2,6 +2,7 @@ import random
 
 STARTING_POS = [0, 0]
 ACTIONS = ["up", "down", "left", "right", "grab", "climb"]
+ITER_LIMIT = 100
 
 
 class QTable:
@@ -39,6 +40,8 @@ class Agent:
         self.has_reward = False
         self.is_terminated = False
         self.q_table = QTable()
+        self.is_win = False
+        self.has_won_before = False
         self.path = []
 
     def reset(self):
@@ -49,6 +52,7 @@ class Agent:
         self.is_glitter = False
         self.has_reward = False
         self.is_terminated = False
+        self.is_win = False
         self.path = []
 
     def best_path(self, env):
@@ -122,7 +126,7 @@ class QLearning(Agent):
     def __init__(self):
         super().__init__()
 
-    def train(self, env, episodes=1000, alpha=0.2, gamma=0.90, epsilon=0.3):
+    def train(self, env, episodes=100, alpha=0.3, gamma=0.90, epsilon=0.3):
         self.reset()
         self.q_table = QTable()
         self.epsilon = epsilon
@@ -132,6 +136,8 @@ class QLearning(Agent):
             # Q-learning steps
             # Q(S,A) <- Q(S,A) + alpha(R + gamma * maxQ(S',A') - Q(S,A))
             self.reset()
+            # epsilon decay
+            self.epsilon *= 0.99
             # 1. Start a state S
             state = (
                 self.row,
@@ -141,7 +147,9 @@ class QLearning(Agent):
                 self.is_glitter,
                 self.has_reward,
             )
-            while not self.is_terminated:
+            iter = 0
+            while not self.is_terminated and iter < ITER_LIMIT:
+                iter += 1
                 # 2. Select an action A
                 action = self.choose_action()
                 self.path.append(action)
@@ -149,6 +157,11 @@ class QLearning(Agent):
                 next_state, reward = self.take_action(env, action)
                 total_rewards += reward
                 best_next_action = self.q_table.get_best_action(next_state)
+                if self.is_terminated:
+                    best_next_action = "done"
+                    if self.is_win and not self.has_won_before:
+                        self.win_episode = episode
+                        self.has_won_before = True
                 # 4. R + gamma * maxQ(S',A')
                 td_target = reward + gamma * self.q_table.get_Q(
                     next_state, best_next_action
@@ -164,7 +177,7 @@ class SARSA(Agent):
     def __init__(self):
         super().__init__()
 
-    def train(self, env, episodes=1000, alpha=0.2, gamma=0.90, epsilon=0.3):
+    def train(self, env, episodes=100, alpha=0.3, gamma=0.90, epsilon=0.3):
         self.reset()
         self.q_table = QTable()
         self.epsilon = epsilon
@@ -174,6 +187,8 @@ class SARSA(Agent):
             # SARSA steps
             # Q(S,A) <- Q(S,A) + alpha(R + gamma * Q(S',A') - Q(S,A))
             self.reset()
+            # epsilon decay
+            self.epsilon *= 0.99
             # 1. Start a state S
             state = (
                 self.row,
@@ -184,15 +199,28 @@ class SARSA(Agent):
                 self.has_reward,
             )
             action = self.choose_action()
-            while not self.is_terminated:
+            iter = 0
+            while not self.is_terminated and iter < ITER_LIMIT:
+                iter += 1
                 # 2. Select an action A
                 self.path.append(action)
                 # 3. Take the action Q(S,A)
                 next_state, reward = self.take_action(env, action)
                 total_rewards += reward
-                next_action = self.choose_action()
-                # 4. R + gamma * Q(S',A')
-                td_target = reward + gamma * self.q_table.get_Q(next_state, next_action)
+
+                if self.is_terminated:
+                    next_action = "done"
+                    td_target = reward
+                    if self.is_win and not self.has_won_before:
+                        self.win_episode = episode
+                        self.has_won_before = True
+                else:
+                    # 4. R + gamma * Q(S',A')
+                    next_action = self.choose_action()
+                    td_target = reward + gamma * self.q_table.get_Q(
+                        next_state, next_action
+                    )
+
                 td_error = td_target - self.q_table.get_Q(state, action)
                 new_q = self.q_table.get_Q(state, action) + alpha * td_error
                 self.q_table.set_Q(state, action, new_q)
