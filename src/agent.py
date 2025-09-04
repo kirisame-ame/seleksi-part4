@@ -70,7 +70,7 @@ class Agent:
         while not self.is_terminated:
             iter += 1
             if iter > 100:
-                return [], "Error:Infinite Loop, maybe increase episodes"
+                return [], "Error:Infinite Loop on Best Path Finding, Try re-training"
             action = self.q_table.get_best_action(state)
             next_state, reward = self.take_action(env, action)
             self.path.append(action)

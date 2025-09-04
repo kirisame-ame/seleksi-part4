@@ -8,5 +8,9 @@
 
 ## Reinforcement Learning (Bag 4)
 
-- ✔️ **Q-Learning**
-- ✔️ **SARSA**
+- ✅ **Q-Learning**
+- ✅ **SARSA**
+
+## Usage
+
+run src/run.py for the training program
